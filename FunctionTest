@@ -1,0 +1,244 @@
+/**
+ * 
+ */
+package complexNumbers;
+
+import junit.framework.TestCase;
+
+/**
+ * Tests the methods of the Function class, as well
+ * as Quantity and its subclasses
+ * 
+ * @author kenneth
+ * @version 9/24/2019
+ *
+ */
+public class FunctionTest extends TestCase {
+    
+    private Function function1;
+    private Function function2;
+    private Function function3;
+    private Function function4;
+    private Function function5;
+    private Function function6;
+    
+    public void setUp()
+    {
+        //creating function1, which is sqrt(1 + x^2)
+        UnaryOperation sqrt = new UnaryOperation("sqrt");
+        function1 = new Function(sqrt);
+        BinaryOperation plus = new BinaryOperation("+");
+        sqrt.setChild(plus);
+        plus.setLeftChild(new Complex(1.0, 0.0));
+        plus.setRightChild(new UnaryOperation("^2"));
+        ((UnaryOperation) plus.getRightChild()).setChild(new Variable("x"));
+        //creating function2, which is (x - y)^2
+        UnaryOperation square = new UnaryOperation("^2");
+        function2 = new Function(square);
+        BinaryOperation minus = new BinaryOperation("-");
+        square.setChild(minus);
+        minus.setLeftChild(new Variable("x"));
+        minus.setRightChild(new Variable("y"));
+        //creating function3, which is z^2
+        UnaryOperation square1 = new UnaryOperation("^2");
+        function3 = new Function(square1);
+        square1.setChild(new Variable("z"));
+        //creating function4, which is e^w
+        UnaryOperation exp = new UnaryOperation("exp");
+        function4 = new Function(exp);
+        exp.setChild(new Variable("w"));
+        //creating function5, which is sqrt(x)
+        UnaryOperation sqrt2 = new UnaryOperation("sqrt");
+        function5 = new Function(sqrt2);
+        sqrt2.setChild(new Variable("x"));
+        //creating function6, which is ln(x)
+        UnaryOperation ln = new UnaryOperation("ln");
+        ln.setChild(new Variable("x"));
+        function6 = new Function(ln);
+    }
+    
+    /**
+     * First test of function1, which is sqrt(1 + x^2)
+     */
+    public void test1Function1()
+    {
+        //test toString method of function1
+        assertEquals("((1.0 + (x^2)).sqrt())", function1.toString());
+        //substitute i for x
+        function1.substitute("x", new Complex(0.0, 1.0));
+        assertEquals("((1.0 + ((0.0 + 1.0i)^2)).sqrt())", function1.toString());
+        //completely evaluate function1
+        function1.fullySimplify();
+        assertEquals("0.0", function1.toString());
+    }
+    
+    /**
+     * Second test of function1, which is sqrt(1 + x^2)
+     */
+    public void test2Function1()
+    {
+        //test toString method of function1
+        assertEquals("((1.0 + (x^2)).sqrt())", function1.toString());
+        //substitute i for x and completely evaluate function1
+        Complex result = function1.subAndEval("x", new Complex(0.0, 1.0));
+        assertEquals(new Complex(0.0, 0.0), result);
+    }
+    
+    /**
+     * Fourth test of function1, which is sqrt(1 + x^2)
+     */
+    public void test4Function1()
+    {
+        //test toString method of function1
+        assertEquals("((1.0 + (x^2)).sqrt())", function1.toString());
+        //make a copy of this function and test toString on that
+        Function copy = function1.copy();
+        assertEquals("((1.0 + (x^2)).sqrt())", copy.toString());
+        //substitute 1 + i for x into the copy and fully simplify
+        copy.substitute("x", new Complex(1.0, 1.0));
+        copy.fullySimplify();
+        assertEquals("(1.272019649514069 + 0.7861513777574233i)", copy.toString());
+        //make sure original function is unchanged
+        assertEquals("((1.0 + (x^2)).sqrt())", function1.toString());
+    }
+    
+    /**
+     * Third test of function1, which is sqrt(1 + x^2)
+     */
+    public void test3Function1()
+    {
+        //test toString method of function1
+        assertEquals("((1.0 + (x^2)).sqrt())", function1.toString());
+        //substitute i for x and completely evaluate function1
+        Complex result = function1.subAndEval("x", new Complex(Math.sqrt(3.0), 0.0));
+        assertEquals(new Complex(2.0, 0.0), result);
+        //test diff() on function1
+        assertEquals("((0.0 + (2.0 * (x * dx/dt))) / (2.0 * ((1.0 + (x^2)).sqrt())))", function1.diff("t").toString());
+    }
+    
+    /**
+     * First test of function2, which is (x - y)^2
+     */
+    public void test1Function2()
+    {
+        //test toString method of function2
+        assertEquals("((x - y)^2)", function2.toString());
+        //substitute 1 + 2i for x and 1 + i for y and completely evaluate function2
+        Complex result = function2.subAndEval("x", new Complex(1.0, 2.0), "y", new Complex(1.0, 1.0));
+        assertEquals(new Complex(-1.0, 0.0), result);   
+        //make sure function2 is unchanged
+        assertEquals("((x - y)^2)", function2.toString());
+        //test diff on this function
+        assertEquals("(2.0 * ((x - y) * (1.0 - dy/dx)))", function2.diff("x").toString());
+        assertEquals("(2.0 * ((x - y) * (dx/dy - 1.0)))", function2.diff("y").toString());
+        assertEquals("(2.0 * ((x - y) * (dx/dt - dy/dt)))", function2.diff("t").toString());
+    }
+    
+    /**
+     * First test of function3, which is z^2
+     */
+    public void test1Function3()
+    {
+        //test toString method of function3
+        assertEquals("(z^2)", function3.toString());
+        //approximate derivative at z = 2 (using non-default precision)
+        assertEquals(new Complex(4, 0), function3.approxDeriv("z", new Complex(2, 0), 100000));
+        //approximate derivative at z = 2 (using default precision)
+        assertEquals(new Complex(4, 0), function3.approxDeriv("z", new Complex(2, 0)));
+        //approximate derivatives at other values
+        assertEquals(new Complex(20, 0), function3.approxDeriv("z", new Complex(10, 0)));
+        assertEquals(new Complex(10, -6), function3.approxDeriv("z", new Complex(5, -3)));
+        assertEquals("(2.0 * (z * 1.0))", function3.diff("z").toString());
+        assertEquals("(2.0 * (z * dz/dx))", function3.diff("x").toString());
+        assertEquals(new Complex(0, -0.33333333333), function3.approxIntegral("z", new Complex(0, 0), new Complex(0, 1)));
+    }
+    
+    /**
+     * First test of function4, which is e^w
+     */
+    public void test1Function4()
+    {
+        //test toString method of function3
+        assertEquals("(w.exp())", function4.toString());
+        //approximate derivative at w = 0 (using default precision)
+        assertEquals(new Complex(1, 0), function4.approxDeriv("w", new Complex(0, 0)));
+        //approximate derivative at w = 1 (using default precision)
+        assertEquals(new Complex(Math.E, 0), function4.approxDeriv("w", new Complex(1, 0)));
+        assertEquals("(1.0 * (w.exp()))", function4.diff("w").toString());
+        assertEquals("(dw/dx * (w.exp()))", function4.diff("x").toString());
+        //approximate integral from w = 0 to w = 1
+        assertEquals(new Complex(Math.E - 1, 0), function4.approxIntegral("w", new Complex(0, 0), new Complex(1, 0)));
+        assertEquals(new Complex(-2, 0), function4.approxIntegral("w", new Complex(0, 0), new Complex(0, Math.PI)));
+        //test the compose method
+        assertEquals("((z^2).exp())", function4.compose("w", function3).toString());
+        assertEquals("((w.exp())^2)", function3.compose("z", function4).toString());
+        //differentiate the composed function e^(x^2) at x = 1
+        assertEquals(new Complex(2 * Math.E, 0), function4.compose("w", function3).diff("z").subAndEval("z", new Complex(1, 0)));
+    }
+    
+    /**
+     * First test of function5, which is sqrt(x)
+     */
+    public void test1Function5()
+    {
+        //test toString method of function5
+        assertEquals("(x.sqrt())", function5.toString());
+        //test diff on function3
+        assertEquals("(1.0 / (2.0 * (x.sqrt())))", function5.diff("x").toString());
+        //find the second derivative of sqrt(x) and plug x = 1 into that derivative
+        assertEquals(new Complex(-0.25, 0), function5.diff("x").diff("x").subAndEval("x", new Complex(1, 0)));
+        //function5 is fully simplified, so cleanUp() should do nothing
+        assertEquals("(x.sqrt())", function5.cleanUp().toString());
+        assertEquals(function5.diff("x").diff("x").subAndEval("x", new Complex(5.2, -3.1)), 
+            function5.diff("x").diff("x").cleanUp().subAndEval("x", new Complex(5.2, -3.1)));
+    }
+    
+    /**
+     * First test of function6, which is ln(x)
+     */
+    public void test1function6()
+    {
+        //diff should work on this function
+        assertEquals("(dx/dt / x)", function6.diff("t").toString());
+        
+        //creating e^(lnx)
+        UnaryOperation exp = new UnaryOperation("exp");
+        exp.setChild(function6.getTopQuantity());
+        Function unsimplified = new Function(exp);
+        assertEquals("((x.ln()).exp())", unsimplified.toString());
+        //creating 1 + e^(lnx)
+        BinaryOperation add = new BinaryOperation("+");
+        UnaryOperation exp2 = new UnaryOperation("exp");
+        UnaryOperation ln2 = new UnaryOperation("ln");
+        add.setLeftChild(new Complex(1, 0));
+        add.setRightChild(exp2);
+        exp2.setChild(ln2);
+        ln2.setChild(new Variable("x"));
+        Function unsimplified2 = new Function(add);
+        assertEquals("(1.0 + ((x.ln()).exp()))", unsimplified2.toString());
+        //creating e^(lnx) + e^(lny)
+        UnaryOperation exp1 = new UnaryOperation("exp");
+        UnaryOperation exp3 = new UnaryOperation("exp");
+        UnaryOperation ln1 = new UnaryOperation("ln");
+        UnaryOperation ln3 = new UnaryOperation("ln");
+        BinaryOperation plus = new BinaryOperation("+");
+        plus.setLeftChild(exp1);
+        plus.setRightChild(exp3);
+        exp1.setChild(ln1);
+        exp3.setChild(ln3);
+        ln1.setChild(new Variable("x"));
+        ln3.setChild(new Variable("y"));
+        Function unsimplified3 = new Function(plus);
+        assertEquals("(((x.ln()).exp()) + ((y.ln()).exp()))", unsimplified3.toString());
+        
+        //trying to simplify e^(lnx)
+        assertEquals("x", unsimplified.cleanUp().toString());
+        //trying to simplify 1 + e^(lnx)
+        assertEquals("(1.0 + x)", unsimplified2.cleanUp().toString());
+        //trying to simplify e^(lnx) + e^(lny)
+        assertEquals("(x + y)", unsimplified3.cleanUp().toString());
+        
+        
+    }
+
+}
